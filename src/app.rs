@@ -38,14 +38,14 @@ impl App {
 
     pub fn select_prev_iface(&mut self) {
         if self.selected_iface == 0 {
-            self.selected_iface = self.available_ifaces.len().into();
+            self.selected_iface = (self.available_ifaces.len() - 1).into();
         } else {
             self.selected_iface -= 1;
         }
     }
 
     pub fn select_next_iface(&mut self) {
-        if self.selected_iface == self.available_ifaces.len() {
+        if self.selected_iface == self.available_ifaces.len() - 1 {
             self.selected_iface = 0;
         } else {
             self.selected_iface += 1
