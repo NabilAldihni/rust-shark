@@ -1,6 +1,23 @@
+use netdev::{get_interfaces, Interface};
+
+use crate::app::Screen::LiveCapture;
+
+#[derive(Debug, Default)]
+pub enum Screen {
+    #[default]
+    ChooseInterface,
+    LiveCapture
+}
+
 #[derive(Debug, Default)]
 pub struct App {
-    pub counter: u8,
+    pub current_screen: Screen,
+
+    pub available_ifaces: Vec<Interface>,
+    pub selected_iface: usize,
+
+    pub interface: Option<Interface>,
+    pub packets: Vec<String>,
     pub should_quit: bool,
 }
 
@@ -15,15 +32,28 @@ impl App {
         self.should_quit = true;
     }
 
-    pub fn increment_counter(&mut self) {
-        if let Some(res) = self.counter.checked_add(1) {
-            self.counter = res;
+    pub fn fetch_interfaces(&mut self) {
+        self.available_ifaces = get_interfaces();
+    }
+
+    pub fn select_prev_iface(&mut self) {
+        if self.selected_iface == 0 {
+            self.selected_iface = self.available_ifaces.len().into();
+        } else {
+            self.selected_iface -= 1;
         }
     }
 
-    pub fn decrement_counter(&mut self) {
-        if let Some(res) = self.counter.checked_sub(1) {
-            self.counter = res;
-        }
+    pub fn select_next_iface(&mut self) {
+        if self.selected_iface == self.available_ifaces.len() {
+            self.selected_iface = 0;
+        } else {
+            self.selected_iface += 1
+        };
+    }
+
+    pub fn confirm_selected_iface(&mut self) {
+        self.interface = Some(self.available_ifaces[self.selected_iface].clone());
+        self.current_screen = LiveCapture;
     }
 }

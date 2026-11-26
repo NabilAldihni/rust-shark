@@ -10,4 +10,5 @@ path = "src/main.rs"
 [dependencies]
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
+netdev = "0.48.0"
 ratatui = "0.30.2"
