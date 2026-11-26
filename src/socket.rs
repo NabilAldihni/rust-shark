@@ -55,13 +55,3 @@ pub fn mac_address(bytes: &[u8]) -> String {
         .collect::<Vec<_>>()
         .join(":")
 }
-
-// fn main() -> Result<(), Box<dyn std::error::Error>> {
-//     let interface = select_interface()?;
-//     let fd = open_packet_socket(&interface)?;
-
-//     println!("Listening on interface: {interface}");
-
-//     let mut buffer = vec![0u8; 65535];
-
-// }

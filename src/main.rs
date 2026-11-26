@@ -4,6 +4,7 @@ pub mod ui;
 pub mod tui;
 pub mod update;
 pub mod socket;
+pub mod stream;
 
 use app::App;
 use color_eyre::Result;

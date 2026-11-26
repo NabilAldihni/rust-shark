@@ -1,13 +1,8 @@
 use netdev::{get_interfaces, Interface};
-use std::thread;
-
-use std::io;
-use std::mem::size_of;
-use std::os::fd::{AsRawFd, OwnedFd};
 
 use crate::{
     app::Screen::LiveCapture,
-    socket::*
+    stream::StreamHandler
 };
 
 #[derive(Debug, Default)]
@@ -25,8 +20,10 @@ pub struct App {
     pub selected_iface: usize,
 
     pub interface: Option<Interface>,
-    pub packets: Vec<String>,
+    pub packets: Vec<Vec<u8>>,
     pub should_quit: bool,
+
+    pub stream: Option<StreamHandler>,
 }
 
 impl App {
@@ -63,50 +60,6 @@ impl App {
     pub fn confirm_selected_iface(&mut self) {
         self.interface = Some(self.available_ifaces[self.selected_iface].clone());
         self.current_screen = LiveCapture;
-
-        let fd: OwnedFd = open_packet_socket(&self.interface.as_ref().unwrap().name).unwrap();
-        let mut buffer = vec![0u8; 65535];
-
-        let _handle = thread::spawn(move || {
-            loop {
-                let mut sender = libc::sockaddr_ll {
-                    sll_family: 0,
-                    sll_protocol: 0,
-                    sll_ifindex: 0,
-                    sll_hatype: 0,
-                    sll_pkttype: 0,
-                    sll_halen: 0,
-                    sll_addr: [0; 8],
-                };
-
-                let mut sender_len = size_of::<libc::sockaddr_ll>() as libc::socklen_t;
-
-                let n = unsafe {
-                    libc::recvfrom(
-                        fd.as_raw_fd(),
-                        buffer.as_mut_ptr().cast::<libc::c_void>(),
-                        buffer.len(),
-                        0,
-                        (&mut sender as *mut libc::sockaddr_ll).cast(),
-                        &mut sender_len,
-                    )
-                };
-
-                if n < 0 {
-                    let error = io::Error::last_os_error();
-
-                    if error.kind() == io::ErrorKind::Interrupted {
-                        continue;
-                    }
-                }
-
-                let n = n as usize;
-                if n >= 14 {
-                    let _dst = mac_address(&buffer[0..6]);
-                    let _src = mac_address(&buffer[6..12]);
-                    let _ethertype = u16::from_be_bytes([buffer[12], buffer[13]]);
-                }
-            }
-        });
+        self.stream = Some(StreamHandler::new(100, &self.interface.as_ref().unwrap().name));
     }
 }

@@ -3,7 +3,8 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, Screen}
+    app::{App, Screen}, 
+    socket::mac_address,
 };
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
@@ -95,8 +96,61 @@ fn render_capture_screen(app: &mut App, frame: &mut Frame) {
         sections[0]
     );
 
-    frame.render_widget(Paragraph::new(
-        "data")
+    for msg in app.stream.as_ref().expect("stream not set up yet").receiver.try_iter() {
+        app.packets.push(msg);
+    }
+
+    let mut list_items = Vec::<ListItem>::new();
+
+    for packet in app.packets.iter() {
+        list_items.push(ListItem::new(
+            Line::from(vec![
+                Span::styled(
+                    "From: ",
+                    Style::default().bold()
+                ),
+                Span::styled(
+                    mac_address(&packet[0..6]) + " |\t",
+                    Style::default().fg(Color::Gray)
+                ),
+                Span::styled(
+                    "To: ",
+                    Style::default().bold()
+                ),
+                Span::styled(
+                    mac_address(&packet[6..12]) + " |\t", 
+                    Style::default().fg(Color::Gray)
+                ),
+                Span::styled(
+                    "Ethertype: ",
+                    Style::default().bold()
+                ),
+                Span::styled(
+                    format!("0x{:04x} |\t", u16::from_be_bytes([packet[12], packet[13]])),
+                    Style::default().fg(Color::Gray)
+                ),
+                Span::styled(
+                    "Data: ",
+                    Style::default().bold()
+                ),
+                Span::styled(
+                    // format!("{:02x}", packet[0]),
+                    packet[14..30]
+                        .iter()
+                        .map(|b| format!("{:02X}", b))
+                        .collect::<Vec<String>>()
+                        .join(" "),
+                    Style::default().fg(Color::Gray)
+                ),
+
+            ])
+        ));
+    }
+
+    let list = List::new(list_items);
+
+    frame.render_widget(
+        list
         .block(Block::default()
             .padding(Padding::left(2))
             .borders(Borders::ALL)
