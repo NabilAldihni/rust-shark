@@ -1,4 +1,5 @@
 use netdev::{get_interfaces, Interface};
+use ratatui::widgets::ListState;
 
 use crate::{
     app::Screen::LiveCapture, parser::PacketLayers, stream::StreamHandler
@@ -20,6 +21,7 @@ pub struct App {
 
     pub interface: Option<Interface>,
     pub packets: Vec<PacketLayers>,
+    pub packet_list_state: ListState,
     pub should_quit: bool,
 
     pub stream: Option<StreamHandler>,

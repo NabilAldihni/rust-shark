@@ -1,5 +1,5 @@
 use ratatui::{
-    Frame, layout::*, style::{Color, Style}, text::{Line, Span}, widgets::{Block, BorderType, Borders, List, ListItem, Padding, Paragraph}
+    Frame, layout::*, style::{Color, Style}, text::{Line, Span}, widgets::{Block, BorderType, Borders, List, ListItem, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState}
 };
 
 use crate::{
@@ -179,18 +179,37 @@ fn render_capture_screen(app: &mut App, frame: &mut Frame) {
         ));
     }
 
-    let list = List::new(list_items);
+    if !list_items.is_empty() {
+        app.packet_list_state.select_last();
+    }
 
-    frame.render_widget(
-        list
-        .block(Block::default()
-            .padding(Padding::left(2))
-            .borders(Borders::ALL)
-            .border_type(BorderType::Plain)
-            .style(Style::default().fg(Color::Yellow)),
-        ),
-        sections[1]
-    );
+    let packet_block = Block::default()
+        .padding(Padding::left(2))
+        .borders(Borders::ALL)
+        .border_type(BorderType::Plain)
+        .style(Style::default().fg(Color::Yellow));
+
+    let viewport_len = packet_block.inner(sections[1]).height as usize;
+    let total = app.packets.len();
+
+    let list = List::new(list_items)
+        .highlight_style(Style::default())
+        .block(packet_block);
+
+    frame.render_stateful_widget(list, sections[1], &mut app.packet_list_state);
+
+    if total > viewport_len && viewport_len > 0 {
+        let max_scroll = total.saturating_sub(viewport_len);
+        let mut scrollbar_state = ScrollbarState::new(max_scroll + 1)
+            .position(app.packet_list_state.offset().min(max_scroll))
+            .viewport_content_length(viewport_len);
+        frame.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .style(Style::default().fg(Color::Yellow)),
+            sections[1].inner(Margin { vertical: 1, horizontal: 0 }),
+            &mut scrollbar_state,
+        );
+    }
 }
 
 pub fn render(app: &mut App, frame: &mut Frame) {
