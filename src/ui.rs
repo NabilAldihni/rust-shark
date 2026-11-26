@@ -2,7 +2,9 @@ use ratatui::{
     Frame, layout::*, style::{Color, Style}, text::{Line, Span}, widgets::{Block, BorderType, Borders, List, ListItem, Padding, Paragraph}
 };
 
-use crate::app::{App, Screen};
+use crate::{
+    app::{App, Screen}
+};
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     // Cut the given rectangle into three vertical pieces
