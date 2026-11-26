@@ -1,8 +1,7 @@
 use netdev::{get_interfaces, Interface};
 
 use crate::{
-    app::Screen::LiveCapture,
-    stream::StreamHandler
+    app::Screen::LiveCapture, parser::PacketLayers, stream::StreamHandler
 };
 
 #[derive(Debug, Default)]
@@ -20,7 +19,7 @@ pub struct App {
     pub selected_iface: usize,
 
     pub interface: Option<Interface>,
-    pub packets: Vec<Vec<u8>>,
+    pub packets: Vec<PacketLayers>,
     pub should_quit: bool,
 
     pub stream: Option<StreamHandler>,

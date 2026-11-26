@@ -5,6 +5,7 @@ use ratatui::{
 use crate::{
     app::{App, Screen}, 
     socket::mac_address,
+    parser::*,
 };
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
@@ -97,7 +98,7 @@ fn render_capture_screen(app: &mut App, frame: &mut Frame) {
     );
 
     for msg in app.stream.as_ref().expect("stream not set up yet").receiver.try_iter() {
-        app.packets.push(msg);
+        app.packets.push(parse(&msg));
     }
 
     let mut list_items = Vec::<ListItem>::new();
@@ -110,7 +111,7 @@ fn render_capture_screen(app: &mut App, frame: &mut Frame) {
                     Style::default().bold()
                 ),
                 Span::styled(
-                    mac_address(&packet[0..6]) + " |\t",
+                    mac_address(&packet.link.unwrap().src_host) + " |\t",
                     Style::default().fg(Color::Gray)
                 ),
                 Span::styled(
@@ -118,7 +119,7 @@ fn render_capture_screen(app: &mut App, frame: &mut Frame) {
                     Style::default().bold()
                 ),
                 Span::styled(
-                    mac_address(&packet[6..12]) + " |\t", 
+                    mac_address(&packet.link.unwrap().dst_host) + " |\t",
                     Style::default().fg(Color::Gray)
                 ),
                 Span::styled(
@@ -126,23 +127,54 @@ fn render_capture_screen(app: &mut App, frame: &mut Frame) {
                     Style::default().bold()
                 ),
                 Span::styled(
-                    format!("0x{:04x} |\t", u16::from_be_bytes([packet[12], packet[13]])),
+                    format!("0x{:04x} |\t", packet.link.unwrap().ether_type),
                     Style::default().fg(Color::Gray)
                 ),
-                Span::styled(
-                    "Data: ",
-                    Style::default().bold()
-                ),
-                Span::styled(
-                    // format!("{:02x}", packet[0]),
-                    packet[14..30]
-                        .iter()
-                        .map(|b| format!("{:02X}", b))
-                        .collect::<Vec<String>>()
-                        .join(" "),
-                    Style::default().fg(Color::Gray)
-                ),
-
+                match packet.network.as_ref() {
+                    Some(nw) => {
+                        match nw {
+                            Network::Ip(_) => {
+                                Span::styled(
+                                    "IP: ",
+                                    Style::default().bold()
+                                )
+                            },
+                            Network::Arp(_) => {
+                                Span::styled(
+                                    "ARP: ",
+                                    Style::default().bold()
+                                )
+                            }
+                        }
+                    },
+                    None => {
+                        Span::styled(
+                            "Unknown",
+                            Style::default().bold()
+                        )
+                    }
+                },
+                match packet.network.as_ref() {
+                    Some(nw) => {
+                        match nw {
+                            Network::Ip(ip) => {
+                                Span::styled(
+                                    format!("{:?}", ip.src),
+                                    Style::default().bold()
+                                )
+                            },
+                            Network::Arp(arp) => {
+                                Span::styled(
+                                    format!("{:?}", arp.sender_ip),
+                                    Style::default().bold()
+                                )
+                            }
+                        }
+                    },
+                    None => {
+                        Span::from("")
+                    }
+                },
             ])
         ));
     }

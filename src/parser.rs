@@ -235,7 +235,7 @@ pub fn parse_helper(packet: &mut PacketLayers, bytes: &[u8]) -> Option<()> {
     let (network, sum_offset, protocol) = match eth_lyr.ether_type {
         0x0800 => IpLayer::parse(&bytes[offset..]).map(|(l, o)| (Network::Ip(l), o, l.protocol)),
         0x0806 => ArpLayer::parse(&bytes[offset..]).map(|(l, o)| (Network::Arp(l), o, 0)),
-        _ => return None,
+        _ => return None
     }?;
     packet.network = Some(network);
     offset += sum_offset;
